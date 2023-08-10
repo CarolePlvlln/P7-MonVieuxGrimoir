@@ -1,9 +1,10 @@
 //Importer Mongoose.
 const mongoose = require('mongoose');
 
+
 //Créer le schéma de données. Fonction Schema. On passe un objet dictant les champs dont le "thing" a besoin.
 const bookSchema = mongoose.Schema({
-    userId: { String, required: true },
+    userId: { type: String, required: true },
     title: { type: String, required: true },
     author: { type: String, required: true },
     imageUrl: { type: String, required: true },

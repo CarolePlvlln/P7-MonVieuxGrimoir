@@ -2,25 +2,24 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
-const stuffRoutes = require('./Route/stuff');
-//const User = require("./connexion/User");
+const stuffRoutes = require('./routes/stuff');
+const userRoutes = require('./routes/user');
 
 const mongoose = require('mongoose');
-mongoose.connect('mongodb+srv://<pelvillaincarole>:<Espagne8>@cluster0.f7i0buy.mongodb.net/',
+mongoose.connect('mongodb+srv://pelvillaincarole:Espagne8@cluster0.f7i0buy.mongodb.net/?retryWrites=true&w=majority',
     {
         useNewUrlParser: true,
         useUnifiedTopology: true
     })
     .then(() => console.log('Connexion à MongoDB réussie !'))
-    .catch(() => console.log('Connexion à MongoDB échouée !'));
+    .catch((error) => console.log(error));
 
 // constante app qui sera l'application
 const app = express();
 //intersepter toutes les requête avec content-type json et mettre à dispo le contenu sur l'objet requête dans rec.body.
 app.use(express.json());
 
-//Enregistrer le routeur pour toutes les demandes effectuées vers /api/stuff
-app.use('/api/stuff', stuffRoutes);
+
 
 //headers pour permettre :d'accéder à notre API depuis n'importe quelle origine ( '*' ),
 app.use((req, res, next) => {
@@ -35,7 +34,8 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.json());
 
-app.listen('/api/stuff', stuffRoutes);
+app.use('/api/books', stuffRoutes);
+app.use ('/api/auth', userRoutes);
 
 // on exporte l'application pour pouvoir y accéder en depuis les autres fichiers du projet notamment le server Node.
 module.exports = app;

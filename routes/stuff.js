@@ -1,14 +1,20 @@
-const express = require('espress');
+const express = require('express');
+const auth = require('../middleware/auth');
 const router = express.Router();
-//Importer controllers Stuff
-const stuffCtrl = require("./controllers/stuff");
+const multer = require('../middleware/multer-config')
 
-//on utilise la fonction stuff du dossier controllers (routes plus claires).
-router.post ('/', stuffCtrl.createBook)
-router.put('/:id', stuffCtrl.modifyBook); 
-router.delete('/:id', stuffCtrl.deleteBook);
-router.get('/:id', stuffCtrl.getOneBook);
+
+//Importer controllers Stuff
+const stuffCtrl = require("../controllers/stuff");
+
+//on utilise la fonction stuff du dossier controllers (routes plus claires). on ajout "auth" car chaque route à besoin d'être authentifiée.
 router.get('/', stuffCtrl.getAllBooks);
+router.post('/', auth,multer,stuffCtrl.createBook);
+router.put('/:id', auth,stuffCtrl.modifyBook); 
+router.delete('/:id', auth,stuffCtrl.deleteBook);
+router.get('/:id', stuffCtrl.getOneBook);
+router.get('/bestrating',stuffCtrl.getBestRating);
+router.post('/:id/rating', auth,stuffCtrl.userRatingBook);
 
 
 module.exports = router;
