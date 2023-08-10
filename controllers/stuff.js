@@ -9,6 +9,7 @@ const fs = require('fs');
 exports.createBook = async (req, res, next) => {
     console.log(req.file)
     //convertir en JS
+    //req.body ce qui vient du front
     const bookJS = JSON.parse(req.body.book)
     const book = new Book({
         title: bookJS.title,
@@ -26,14 +27,6 @@ exports.createBook = async (req, res, next) => {
     });
     //chemin du fichier, redimensionner image, compresser image suivant format
     await sharp(req.file.path).resize(206, 260).png({ quality: 60 }).jpeg({ quality: 60 }).toFile(`images/resized_${req.file.filename}`)
-    /*fs.readFile(
-        `${req.protocol}://${req.get("host")}/images/resized_${req.file.filename}`, {encoding: "utf8"},function (err, image) {
-            if (err) {
-                throw err;
-            }
-            console.log(image);
-            res.send(image);
-        })*/
     //méthode "save" pour sauvegarder le nouveau 'book' dans la base de données
     book.save()
         //Renvoi un réponse
@@ -43,7 +36,7 @@ exports.createBook = async (req, res, next) => {
         )
 };
 
-
+//supprimer image
 exports.modifyBook = async (req, res, next) => {
     console.log(req.file)
     Book.findOne({ _id: req.params.id })
@@ -118,7 +111,7 @@ exports.getOneBook = (req, res, next) => {
 
 //router.get('/api/books/bestrating',stuffCtrl.getBestRating);
 exports.getBestRating = (req, res, next) => {
-    const BestRatingBook = Book.filter({ _ratings: req.params.ratings.grade } === 5)
+    const BestRatingBook = Book.filter({ _ratings: req.params.averageRating } === 5)
     /*Book.filter(({ ratings }) =>
        ratings === 5);*/
     console.log(BestRatingBook)
@@ -131,43 +124,31 @@ exports.getBestRating = (req, res, next) => {
 
 //router.post('/api/books/:id/rating', auth,stuffCtrl.userRatingBook);
 exports.userRatingBook = (req, res, next) => {
-    /* Book.findById({ _id: req.params.id }).exec(function (err, Book) {
-         Grade.create(newGrade, function (err, rating) {
-             Book.ratings.push(rating);
-             Book.rating = calculateRating(Book.ratings);
-             Book.save()
-         })
-             .then(() => { res.status(200).json({ message: 'Rating added!' }) })
- 
-             .catch(error => { res.status(400).json({ error }) });
-     })
- */
-    //convertir en JS
-    const bookJS = JSON.parse(req.body.book)
-    const rating = new grade({
-        ratings: [{
-            userId: req.auth.userId,
-            grade: bookJS.ratings.grade,
-        }],
-        averageRating: req.body.averageRating
-    });
-    // Trouver comment empêcher si user déjà fait une notation.
-    if (Book.count({ Book: Book._ratings, auth: user._id }) == 0) {
-        rating.save()
-        Book.findByIdAndUpdate({ _id: req.params.id }, {
-            $push: {
-                grade: grade
+    Book.findOne({ _id: req.params.id })
+        .then(book => {
+            //fonction find
+            if (book.ratings.find(rating => rating.userId === req.auth.userId)) {
+                //405 non autorisé
+                return res.status(405).json({ error: "Vous avez déjà noté" })
+            } else {
+                book.ratings.push({ userId: req.auth.userId, grade: req.body.rating })
+                /*méthode reduce  acc (garde en mémoire ce qu'on met dans la fonction). Méthode reduce prend argument acc (accumulateur) et 
+                rating. Prend en argument ce qui a été accumulé (acc) et rating puis d'où on commence à compter (0). On divise par la longueur 
+                du tabeau rating*/
+                let average = book.ratings.reduce((acc, rating) =>
+                    acc + rating, 0) / book.ratings.length
+                //limiter les chiffres après virgule
+                average = average.toFixed(1)
+                //ajouter la nouvlle moyenne au livre
+                book.averageRating = average
+                book.save()
+                return book.save()
             }
         })
-            //Trouver comment l'ajouter aux autres rating.
-
-            .then(() => { res.status(200).json({ message: 'Rating added!' }) })
-
-            .catch(error => { res.status(400).json({ error }) });
-    } else {
-        return ({ error })
+        .then(book => res.status(200).json(book))
+        //Error
+        .catch(error => { res.status(404).json({ error: error }) });
     }
-};
 
 
 

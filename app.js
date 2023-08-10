@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 
 const stuffRoutes = require('./routes/stuff');
 const userRoutes = require('./routes/user');
+//chemin pour images
+const path = require("path");
 
 const mongoose = require('mongoose');
 mongoose.connect('mongodb+srv://pelvillaincarole:Espagne8@cluster0.f7i0buy.mongodb.net/?retryWrites=true&w=majority',
@@ -18,7 +20,6 @@ mongoose.connect('mongodb+srv://pelvillaincarole:Espagne8@cluster0.f7i0buy.mongo
 const app = express();
 //intersepter toutes les requête avec content-type json et mettre à dispo le contenu sur l'objet requête dans rec.body.
 app.use(express.json());
-
 
 
 //headers pour permettre :d'accéder à notre API depuis n'importe quelle origine ( '*' ),
@@ -36,6 +37,9 @@ app.use(bodyParser.json());
 
 app.use('/api/books', stuffRoutes);
 app.use ('/api/auth', userRoutes);
+//route images (dirname: chemin courant)
+app.use("/images", express.static(path.join(__dirname, "images")));
+
 
 // on exporte l'application pour pouvoir y accéder en depuis les autres fichiers du projet notamment le server Node.
 module.exports = app;
