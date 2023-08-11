@@ -37,7 +37,7 @@ exports.createBook = async (req, res, next) => {
 };
 
 //supprimer image
-exports.modifyBook = async (req, res, next) => {
+exports.modifyBook = (req, res, next) => {
     console.log(req.file)
     Book.findOne({ _id: req.params.id })
     //convertir en JS
@@ -55,18 +55,24 @@ exports.modifyBook = async (req, res, next) => {
         }],
         averageRating: req.params.averageRating
     });
-    //chemin du fichier, redimensionner image, compresser image suivant format
-    await sharp(req.file.path).resize(206, 260).png({ quality: 60 }).jpeg({ quality: 60 }).toFile(`images/resized_${req.file.filename}`)
+    fs.unlink(`images/${filename}`, async function (err) {
+        if (err) {
+            return console.log(err + 'file deleted successfully')
+        }
+        else {
+            //chemin du fichier, redimensionner image, compresser image suivant format
+            await sharp(req.file.path).resize(206, 260).png({ quality: 60 }).jpeg({ quality: 60 }).toFile(`images/resized_${req.file.filename}`)
+        }
+    })
     book.save()
         //vérifier si Id utilisateur == id du Book
         .then(book => {
             if (book.userId != req.auth.userId) {
-                res.status(401).json({ message: 'Non-authorisé' });
+                res.status(405).json({ message: 'Non-authorisé' });
             } else {
                 //pour mettre à jour un Book dans la BD. Le 1er argument est l'objet de comparaison (id envoyé dans paramètre de requête).Le 2ème est la nouvelle version de l'ojet.
                 Book.updateOne({ _id: req.params.id }, Book)
                     .then(() => { res.status(200).json({ message: 'Book updated successfully!' }) })
-
                     .catch(error => { res.status(400).json({ error }) })
             };
         })
@@ -81,13 +87,13 @@ exports.deleteBook = (req, res, next) => {
     Book.findOne({ _id: req.params.id })
         .then(book => {
             if (book.userId != req.auth.userId) {
-                res.status(401).json({ message: 'Non-authorisé' });
+                res.status(405).json({ message: 'Non-authorisé' });
             } else {
                 //on retire et on l'a supprime l'image du dossier 'image' grâce à "fs.unlink"
                 const filename = book.imageUrl.split('/images/')[1];
                 fs.unlink(`images/${filename}`, () => {
                     Book.deleteOne({ _id: req.params.id })
-                        .then(() => { res.status(200).json({ message: 'Livre supprimé !' }) })
+                        .then(() => { res.status(200).json({ message: 'Book deleted !' }) })
                         .catch(error => res.status(401).json({ error }));
                 });
             }
@@ -111,14 +117,22 @@ exports.getOneBook = (req, res, next) => {
 
 //router.get('/api/books/bestrating',stuffCtrl.getBestRating);
 exports.getBestRating = (req, res, next) => {
-    const BestRatingBook = Book.filter({ _ratings: req.params.averageRating } === 5)
+    Book.find({ _id: req.params.id })
+    .then(book => {
+        if (req.book.ratings === 5) {
+            res.status(200).json({ message: 'Best books rated' });
+                return (book)
+        }}) 
+        .catch(error => { res.status(404).json({ error: error }) })
+    }
+        
+        //Error
+        
+    //const BestRatingBook = Book.filter({ _ratings: req.params.averageRating } === 5)
     /*Book.filter(({ ratings }) =>
        ratings === 5);*/
-    console.log(BestRatingBook)
-        .then(book => { res.status(200).json(book) })
-        //Error
-        .catch(error => { res.status(404).json({ error: error }) });
-};
+    //console.log(BestRatingBook)
+
 
 
 
@@ -129,7 +143,7 @@ exports.userRatingBook = (req, res, next) => {
             //fonction find
             if (book.ratings.find(rating => rating.userId === req.auth.userId)) {
                 //405 non autorisé
-                return res.status(405).json({ error: "Vous avez déjà noté" })
+                return res.status(405).json({ error: "You already added rating" })
             } else {
                 book.ratings.push({ userId: req.auth.userId, grade: req.body.rating })
                 /*méthode reduce  acc (garde en mémoire ce qu'on met dans la fonction). Méthode reduce prend argument acc (accumulateur) et 
@@ -148,7 +162,7 @@ exports.userRatingBook = (req, res, next) => {
         .then(book => res.status(200).json(book))
         //Error
         .catch(error => { res.status(404).json({ error: error }) });
-    }
+}
 
 
 

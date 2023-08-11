@@ -1,7 +1,8 @@
 // On importe express
 const express = require('express');
+//body-parser extrait la partie entière du body dans la requête et l'expose sur req.body.
 const bodyParser = require('body-parser');
-
+//Importation des fichiers routes stuff et user.
 const stuffRoutes = require('./routes/stuff');
 const userRoutes = require('./routes/user');
 //chemin pour images
@@ -33,9 +34,11 @@ app.use((req, res, next) => {
     next();
 });
 
+//Informe le système que l'on veut utiliser du json
 app.use(bodyParser.json());
-
+//route livres
 app.use('/api/books', stuffRoutes);
+//route authentification
 app.use ('/api/auth', userRoutes);
 //route images (dirname: chemin courant)
 app.use("/images", express.static(path.join(__dirname, "images")));
