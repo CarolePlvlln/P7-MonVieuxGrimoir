@@ -36,7 +36,7 @@ exports.createBook = async (req, res, next) => {
         )
 };
 
-//supprimer image
+//modifier infos book et image
 exports.modifyBook = (req, res, next) => {
     console.log(req.file)
     Book.findOne({ _id: req.params.id })
@@ -118,8 +118,8 @@ exports.getOneBook = (req, res, next) => {
 //router.get('/api/books/bestrating',stuffCtrl.getBestRating);
 exports.getBestRating = (req, res, next) => {
     Book.find({ _id: req.params.id })
-    .then(book => {
-        if (req.book.ratings === 5) {
+    .then(book => { 
+        if (book.averageRating === 5) {
             res.status(200).json({ message: 'Best books rated' });
                 return (book)
         }}) 
@@ -153,7 +153,7 @@ exports.userRatingBook = (req, res, next) => {
                     acc + rating, 0) / book.ratings.length
                 //limiter les chiffres après virgule
                 average = average.toFixed(1)
-                //ajouter la nouvlle moyenne au livre
+                //ajouter la nouvelle moyenne au livre
                 book.averageRating = average
                 book.save()
                 return book.save()
