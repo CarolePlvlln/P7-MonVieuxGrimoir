@@ -18,6 +18,7 @@ exports.createBook = async (req, res, next) => {
         userId: req.auth.userId,
         //req.protocol = requête http. "request.file.nom"
         imageUrl: `${req.protocol}://${req.get("host")}/images/resized_${req.file.filename}`,
+        filename: req.file.filename,
         genre: bookJS.genre,
         ratings: [{
             userId: req.auth.userId,
@@ -37,31 +38,28 @@ exports.createBook = async (req, res, next) => {
 };
 
 //modifier infos book et image
-exports.modifyBook = (req, res, next) => {
-    console.log(req.file)
-    Book.findOne({ _id: req.params.id })
-    //convertir en JS
-    const book = new Book({
-        title: req.params.title,
-        author: req.params.author,
-        //userId dans middleware auth
-        userId: req.auth.userId,
-        //req.protocol = requête http. "request.file.nom"
-        imageUrl: `${req.protocol}://${req.get("host")}/images/resized_${req.file.filename}`,
-        genre: req.params.genre,
-        ratings: [{
-            userId: req.auth.userId,
-            grade: req.params.ratings.grade,
-        }],
-        averageRating: req.params.averageRating
-    });
-    fs.unlink(`images/${filename}`, async function (err) {
+exports.modifyBook = async (req, res, next) => {
+    console.log(req.body.book)
+    const bookJS = JSON.parse(req.body.book)
+    const book = await Book.findOne({ _id: req.params.id })
+    console.log(book)
+    //Si "book" inexitant alors erreur 404. Sinon on continue code
+    if (!book) {
+        res.status(404).json({ message: "Book doesn't exist" })
+        return
+    }
+    book.title = bookJS.title;
+    book.author = bookJS.author;
+    //req.protocol = requête http. "request.file.nom"
+    book.genre = bookJS.genre;
+    const oldFilename = book.filename;
+    book.imageUrl = `${req.protocol}://${req.get("host")}/images/resized_${req.file.filename}`;
+    book.filename = req.file.filename;
+    await sharp(req.file.path).resize(206, 260).png({ quality: 60 }).jpeg({ quality: 60 }).toFile(`images/resized_${req.file.filename}`)
+    //on supprime l'ancienne image
+    fs.unlink(`images/resized_${oldFilename}`, async function (err) {
         if (err) {
             return console.log(err + 'file deleted successfully')
-        }
-        else {
-            //chemin du fichier, redimensionner image, compresser image suivant format
-            await sharp(req.file.path).resize(206, 260).png({ quality: 60 }).jpeg({ quality: 60 }).toFile(`images/resized_${req.file.filename}`)
         }
     })
     book.save()
@@ -70,10 +68,7 @@ exports.modifyBook = (req, res, next) => {
             if (book.userId != req.auth.userId) {
                 res.status(405).json({ message: 'Non-authorisé' });
             } else {
-                //pour mettre à jour un Book dans la BD. Le 1er argument est l'objet de comparaison (id envoyé dans paramètre de requête).Le 2ème est la nouvelle version de l'ojet.
-                Book.updateOne({ _id: req.params.id }, Book)
-                    .then(() => { res.status(200).json({ message: 'Book updated successfully!' }) })
-                    .catch(error => { res.status(400).json({ error }) })
+                res.status(200).json({ message: 'Book updated successfully!' })
             };
         })
         .catch(error => {
@@ -117,21 +112,14 @@ exports.getOneBook = (req, res, next) => {
 
 //router.get('/api/books/bestrating',stuffCtrl.getBestRating);
 exports.getBestRating = (req, res, next) => {
-    Book.find({ _id: req.params.id })
-    .then(book => { 
-        if (book.averageRating === 5) {
-            res.status(200).json({ message: 'Best books rated' });
-                return (book)
-        }}) 
+    Book.find({ averageRating: 5 })
+        .then(book => {
+            res.status(200).json(book);
+            //return console(book)
+        })
         .catch(error => { res.status(404).json({ error: error }) })
-    }
-        
-        //Error
-        
-    //const BestRatingBook = Book.filter({ _ratings: req.params.averageRating } === 5)
-    /*Book.filter(({ ratings }) =>
-       ratings === 5);*/
-    //console.log(BestRatingBook)
+}
+
 
 
 

@@ -10,10 +10,10 @@ const stuffCtrl = require("../controllers/stuff");
 //on utilise la fonction stuff du dossier controllers (routes plus claires). On ajoute "auth" sur chaque route où l'on a besoin d'être authentifié.
 router.get('/', stuffCtrl.getAllBooks);
 router.post('/', auth,multer,stuffCtrl.createBook);
-router.put('/:id', auth,stuffCtrl.modifyBook); 
+router.put('/:id', auth,multer,stuffCtrl.modifyBook); 
 router.delete('/:id', auth,stuffCtrl.deleteBook);
+router.get('/bestrating', stuffCtrl.getBestRating);
 router.get('/:id', stuffCtrl.getOneBook);
-router.get('/bestrating',stuffCtrl.getBestRating);
 router.post('/:id/rating', auth,stuffCtrl.userRatingBook);
 
 
