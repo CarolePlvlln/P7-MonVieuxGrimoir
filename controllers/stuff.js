@@ -7,13 +7,14 @@ const fs = require('fs');
 
 
 exports.createBook = async (req, res, next) => {
-    console.log(req.file)
     //convertir en JS
     //req.body ce qui vient du front
     const bookJS = JSON.parse(req.body.book)
+    console.log(bookJS)
     const book = new Book({
         title: bookJS.title,
         author: bookJS.author,
+        year: bookJS.year,
         //userId dans middleware auth
         userId: req.auth.userId,
         //req.protocol = requête http. "request.file.nom"
@@ -22,7 +23,7 @@ exports.createBook = async (req, res, next) => {
         genre: bookJS.genre,
         ratings: [{
             userId: req.auth.userId,
-            grade: bookJS.ratings.grade,
+            grade: bookJS.ratings[0].grade,
         }],
         averageRating: bookJS.averageRating
     });
@@ -39,40 +40,43 @@ exports.createBook = async (req, res, next) => {
 
 //modifier infos book et image
 exports.modifyBook = async (req, res, next) => {
-    console.log(req.body.book)
-    const bookJS = JSON.parse(req.body.book)
     const book = await Book.findOne({ _id: req.params.id })
-    console.log(book)
     //Si "book" inexitant alors erreur 404. Sinon on continue code
     if (!book) {
-        res.status(404).json({ message: "Book doesn't exist" })
-        return
+        return res.status(404).json({ message: "Book doesn't exist" })
     }
+    if (book.userId != req.auth.userId) {
+        return res.status(405).json({ message: 'Non-authorisé' })
+    }
+    const bookJS = JSON.parse(req.body.book)
+    console.log(req.body)
     book.title = bookJS.title;
     book.author = bookJS.author;
+    book.year = bookJS.year;
+    console.log(book)
     //req.protocol = requête http. "request.file.nom"
     book.genre = bookJS.genre;
-    //Stocker l'ancienne image avant de l'écraser.
-    const oldFilename = book.filename;
-    book.imageUrl = `${req.protocol}://${req.get("host")}/images/resized_${req.file.filename}`;
-    book.filename = req.file.filename;
-    await sharp(req.file.path).resize(206, 260).png({ quality: 60 }).jpeg({ quality: 60 }).toFile(`images/resized_${req.file.filename}`)
-    //on supprime l'ancienne image
-    fs.unlink(`images/resized_${oldFilename}`, async function (err) {
-        if (err) {
-            return console.log(err + 'file deleted successfully')
-        }
-    })
+    if (req.file) {
+        //Stocker l'ancienne image avant de l'écraser.
+        const oldFilename = book.filename;
+        book.imageUrl = `${req.protocol}://${req.get("host")}/images/resized_${req.file.filename}`;
+        book.filename = req.file.filename;
+        await sharp(req.file.path).resize(206, 260).png({ quality: 60 }).jpeg({ quality: 60 }).toFile(`images/resized_${req.file.filename}`)
+        //on supprime l'ancienne image
+        fs.unlink(`images/resized_${oldFilename}`, async function (err) {
+            if (err) {
+                return console.log(err + 'file deleted successfully')
+            }
+        })
+    }
     book.save()
         //vérifier si Id utilisateur == id du Book
         .then(book => {
-            if (book.userId != req.auth.userId) {
-                res.status(405).json({ message: 'Non-authorisé' });
-            } else {
-                res.status(200).json({ message: 'Book updated successfully!' })
-            };
+            res.status(200).json({ message: 'Book updated successfully!' })
         })
+
         .catch(error => {
+            console.log (error)
             res.status(500).json({ error })
         })
 };
