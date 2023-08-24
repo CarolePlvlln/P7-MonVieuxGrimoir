@@ -52,6 +52,7 @@ exports.modifyBook = async (req, res, next) => {
     book.author = bookJS.author;
     //req.protocol = requête http. "request.file.nom"
     book.genre = bookJS.genre;
+    //Stocker l'ancienne image avant de l'écraser.
     const oldFilename = book.filename;
     book.imageUrl = `${req.protocol}://${req.get("host")}/images/resized_${req.file.filename}`;
     book.filename = req.file.filename;
