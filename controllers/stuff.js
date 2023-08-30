@@ -48,14 +48,17 @@ exports.modifyBook = async (req, res, next) => {
     if (book.userId != req.auth.userId) {
         return res.status(405).json({ message: 'Non-authorisé' })
     }
-    const bookJS = JSON.parse(req.body.book)
+    let data
+    if(req.body.book) {
+        data=JSON.parse(req.body.book)
+    } else{ data= req.body}
     console.log(req.body)
-    book.title = bookJS.title;
-    book.author = bookJS.author;
-    book.year = bookJS.year;
+    book.title = data.title;
+    book.author = data.author;
+    book.year = data.year;
     console.log(book)
     //req.protocol = requête http. "request.file.nom"
-    book.genre = bookJS.genre;
+    book.genre = data.genre;
     if (req.file) {
         //Stocker l'ancienne image avant de l'écraser.
         const oldFilename = book.filename;
@@ -143,18 +146,19 @@ exports.userRatingBook = (req, res, next) => {
                 rating. Prend en argument ce qui a été accumulé (acc) et rating puis d'où on commence à compter (0). On divise par la longueur 
                 du tabeau rating*/
                 let average = book.ratings.reduce((acc, rating) =>
-                    acc + rating, 0) / book.ratings.length
+                    acc + rating.grade, 0) / book.ratings.length
                 //limiter les chiffres après virgule
                 average = average.toFixed(1)
+                console.log(book.ratings);
                 //ajouter la nouvelle moyenne au livre
                 book.averageRating = average
-                book.save()
+            
                 return book.save()
             }
         })
-        .then(book => res.status(200).json(book))
+        .then(book =>res.status(200).json(book))
         //Error
-        .catch(error => { res.status(404).json({ error: error }) });
+        .catch(error => { console.log(error); res.status(404).json({ error: error }) });
 }
 
 
