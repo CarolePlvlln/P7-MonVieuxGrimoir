@@ -92,7 +92,7 @@ exports.deleteBook = (req, res, next) => {
             if (book.userId != req.auth.userId) {
                 res.status(405).json({ message: 'Non-authorisé' });
             } else {
-                //on retire et on l'a supprime l'image du dossier 'image' grâce à "fs.unlink"
+                //on retire et supprime l'image du dossier 'image' grâce à "fs.unlink"
                 const filename = book.imageUrl.split('/images/')[1];
                 fs.unlink(`images/${filename}`, () => {
                     Book.deleteOne({ _id: req.params.id })
