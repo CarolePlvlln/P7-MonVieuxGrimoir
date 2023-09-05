@@ -68,7 +68,7 @@ exports.modifyBook = async (req, res, next) => {
         //on supprime l'ancienne image
         fs.unlink(`images/resized_${oldFilename}`, async function (err) {
             if (err) {
-                return console.log(err + 'file deleted successfully')
+                return console.log(err + 'file not deleted')
             }
         })
     }

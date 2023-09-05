@@ -19,5 +19,5 @@ const bookSchema = mongoose.Schema({
 });
 
 
-//On exporte le modèle afin de pouvoir l'exploiter en dehors.
+//On exporte le modèle afin de pouvoir l'exploiter en dehors. "model" trandforme ce model en modèle utilisable
 module.exports = mongoose.model('Book', bookSchema);
